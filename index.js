@@ -24,6 +24,7 @@ app.get('/healthcheck', (req, res) => {
 
 // ✅ Rotas da API
 app.use('/api/treinos', treinoRoutes);
+app.use('/api/modalidades', modalidadeRoutes);
 
 // ✅ Inicialização do servidor
 app.listen(port, () => {
