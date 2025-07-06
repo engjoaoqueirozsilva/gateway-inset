@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { baseFields, baseOptions } from "./BaseModel.js";
+import { baseFields, baseOptions } from "./base/BaseModel.js";
 
 const AvaliacaoSchema = new mongoose.Schema({
   Saque: [String],
