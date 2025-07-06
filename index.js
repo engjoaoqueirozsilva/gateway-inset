@@ -2,22 +2,22 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import treinoRoutes from './routes/treinoRoutes.js';
-import modalidadeRoutes from './routes/modalidadeRoutes.js'; // ✅ Você esqueceu de importar!
+import modalidadeRoutes from './routes/modalidadeRoutes.js';
 import { port, mongoURI } from './config.js';
+import { checkApiKey } from './middlewares/checkApiKey.js';
 
 const app = express();
 
-// ✅ Configuração do CORS (liberando apenas o domínio do seu front)
-const corsOptions = {
-  origin: process.env.ALLOWED_ORIGIN,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-};
+// ✅ Libera todas as origens (com segurança via chave)
+app.use(cors());
 
-app.use(cors(corsOptions)); // Deve vir antes de app.use(express.json())
+// Middleware para JSON
 app.use(express.json());
 
-// ✅ Conexão com o MongoDB
+// ✅ Middleware global para validar a chave da API
+app.use(checkApiKey);
+
+// ✅ Conexão com MongoDB
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log('✅ Conectado ao MongoDB'))
   .catch(err => {
@@ -32,7 +32,7 @@ app.get('/healthcheck', (req, res) => {
 
 // ✅ Rotas da API
 app.use('/api/treinos', treinoRoutes);
-app.use('/api/modalidades', modalidadeRoutes); // Certifique-se que essa rota existe
+app.use('/api/modalidades', modalidadeRoutes);
 
 // ✅ Inicialização do servidor
 app.listen(port, () => {
