@@ -1,9 +1,9 @@
 import express from 'express';
-import { ModalidadeModel } from '../models/ModalidadeModel.js';
+import { Modalidade } from '../models/ModalidadeModel.js';
 import { BaseService } from '../services/BaseService.js';
 
 const router = express.Router();
-const modalidadeService = new BaseService(ModalidadeModel);
+const modalidadeService = new BaseService(Modalidade);
 
 // Rota para criar uma nova modalidade
 router.post('/', async (req, res) => {
