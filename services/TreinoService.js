@@ -7,4 +7,4 @@ class TreinoService extends BaseService {
   }
 }
 
-export default new TreinoService();
+export default TreinoService;

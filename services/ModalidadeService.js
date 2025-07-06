@@ -7,4 +7,4 @@ class ModalidadeService extends BaseService {
   }
 }
 
-export default new ModalidadeService();
+export default ModalidadeService;

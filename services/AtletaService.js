@@ -7,4 +7,4 @@ class AtletaService extends BaseService {
   }
 }
 
-export default new AtletaService();
+export default AtletaService;
