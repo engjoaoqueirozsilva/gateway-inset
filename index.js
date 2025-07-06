@@ -4,7 +4,7 @@ import cors from 'cors';
 import treinoRoutes from './routes/treinoRoutes.js';
 import modalidadeRoutes from './routes/modalidadeRoutes.js';
 import { port, mongoURI } from './config.js';
-import { checkApiKey } from './middlewares/checkApiKey.js';
+
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 
 // ✅ Middleware global para validar a chave da API
-app.use(checkApiKey);
+//app.use(checkApiKey);
 
 // ✅ Conexão com MongoDB
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
