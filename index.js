@@ -4,8 +4,8 @@ import cors from 'cors';
 import treinoRoutes from './routes/treinoRoutes.js';
 import modalidadeRoutes from './routes/modalidadeRoutes.js';
 import atletaRoutes from './routes/atletaRoutes.js';
+import planoRoutes from "./routes/planoRoutes.js";
 import { port, mongoURI } from './config.js';
-
 
 const app = express();
 
@@ -20,9 +20,9 @@ app.use(express.json());
 
 // ✅ Conexão com MongoDB
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('✅ Conectado ao MongoDB'))
+  .then(() => console.log('✅ Gipsy Danger com reatores ativos, pronto para o combate!'))
   .catch(err => {
-    console.error('❌ Erro ao conectar ao MongoDB:', err.message);
+    console.error('❌ Gipsy Danger localizou uma falha ao ativar reatores, risco de explosão nuclear', err.message);
     process.exit(1);
   });
 
@@ -35,6 +35,7 @@ app.get('/healthcheck', (req, res) => {
 app.use('/api/treinos', treinoRoutes);
 app.use('/api/modalidades', modalidadeRoutes);
 app.use('/api/atletas', atletaRoutes);
+app.use("/api/planos", planoRoutes);
 
 // ✅ Inicialização do servidor
 app.listen(port, () => {
