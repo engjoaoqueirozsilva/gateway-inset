@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import treinoRoutes from './routes/treinoRoutes.js';
 import modalidadeRoutes from './routes/modalidadeRoutes.js';
+import atletaRoutes from './routes/atletaRoutes.js';
 import { port, mongoURI } from './config.js';
 
 
@@ -33,8 +34,9 @@ app.get('/healthcheck', (req, res) => {
 // ✅ Rotas da API
 app.use('/api/treinos', treinoRoutes);
 app.use('/api/modalidades', modalidadeRoutes);
+app.use('/api/atletas', atletaRoutes);
 
 // ✅ Inicialização do servidor
 app.listen(port, () => {
-  console.log(`🚀 Gateway rodando em http://localhost:${port}`);
+  console.log(`🚀 Cherno Alpha pronto para combate`);
 });

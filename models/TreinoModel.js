@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { baseFields, baseOptions } from "./BaseModel.js";
 
 const AvaliacaoSchema = new mongoose.Schema({
   Saque: [String],
@@ -22,7 +23,9 @@ const TreinoSchema = new mongoose.Schema({
   local: String,
   atletas: [AtletaSchema],
   observacoes: String,
-  finalizado: Boolean
-});
+  finalizado: Boolean,
+  ...baseFields
+}, baseOptions
+);
 
 export const Treino = mongoose.model('Treino', TreinoSchema, 'in-set-pro');
