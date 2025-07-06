@@ -1,7 +1,5 @@
-import express from 'express';
-import { Treino } from '../models/TreinoModel.js';
-import { BaseService } from '../services/base/BaseService.js';
+import { TreinoService } from '../services/TreinoService.js';
 import { generateRoutes } from "./base/baseRoute.js";
 
-const treinoService = new BaseService(Treino);
+const treinoService = new TreinoService();
 export default generateRoutes(treinoService);
