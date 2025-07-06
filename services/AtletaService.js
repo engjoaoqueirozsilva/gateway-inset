@@ -17,6 +17,7 @@ class AtletaService extends BaseService {
 
     return await query;
   }
+  
 }
 
 export default AtletaService;
