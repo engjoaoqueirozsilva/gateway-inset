@@ -7,8 +7,8 @@ export class BaseService {
     return await this.model.create(data);
   }
 
-  async findAll() {
-    return await this.model.find();
+  findAll() {
+    return this.model.find();
   }
 
   async findById(id) {
