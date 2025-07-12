@@ -15,7 +15,7 @@ const ParticipanteSchema = new mongoose.Schema({
       message: "O número da camisa deve ter no máximo 3 dígitos numéricos."
     }
   }
-}, { _id: false });
+});
 
 const PlanoSchema = new mongoose.Schema({
   nome: { type: String, required: true },

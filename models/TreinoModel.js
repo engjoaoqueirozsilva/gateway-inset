@@ -18,7 +18,16 @@ const AtletaSchema = new mongoose.Schema({
 const TreinoSchema = new mongoose.Schema({
   treinoId: String,
   data: Date,
-  modalidade: String,
+  modalidade: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Modalidade",
+    required: true
+  },
+  plano:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Plano",
+    required: true
+  },
   responsavel: String,
   local: String,
   atletas: [AtletaSchema],
@@ -28,4 +37,4 @@ const TreinoSchema = new mongoose.Schema({
 }, baseOptions
 );
 
-export const Treino = mongoose.model('Treino', TreinoSchema, 'in-set-pro');
+export const Treino = mongoose.model('Treino', TreinoSchema);

@@ -6,12 +6,17 @@ class PlanoService extends BaseService {
     super(Plano);
   }
 
+  // Busca com filtros + populate opcional
   async findAll(filtro = {}, populate = []) {
     let query = Plano.find(filtro);
 
     if (Array.isArray(populate)) {
       populate.forEach((campo) => {
-        query = query.populate(campo);
+        if (typeof campo === "string") {
+          query = query.populate(campo);
+        } else if (typeof campo === "object") {
+          query = query.populate(campo);
+        }
       });
     }
 

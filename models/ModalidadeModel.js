@@ -7,6 +7,7 @@ const ModalidadeSchema = new mongoose.Schema({
   responsavelTecnico: { type: String },
   auxiliarTecnico: { type: String },
   observacoes: { type: String },
+  clubeId: { type: mongoose.Schema.Types.ObjectId, ref: "Clube", required: true },
   ...baseFields
 }, baseOptions);
 
