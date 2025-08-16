@@ -1,6 +1,5 @@
 // routes/atletaRoutes.js
 import express from "express";
-import mongoose from "mongoose"; // Necessário para converter IDs para ObjectId
 import { extrairClubeId } from "../middlewares/auth.js";
 import AtletaService from "../services/AtletaService.js";
 import { generateRoutes } from "./base/baseRoute.js";
@@ -11,50 +10,26 @@ const atletaService = new AtletaService();
 // Aplica o middleware para injetar `req.usuario`
 router.use(extrairClubeId);
 
-// GET personalizado com filtro (por clube e/ou modalidade)
+// GET personalizado para buscar atletas com filtros (lógica no serviço)
 router.get("/", async (req, res) => {
  try {
-  // O clubeId já vem como string do middleware `extrairClubeId`
-  const clubeIdDoUsuario = req.usuario.clubeId;
+  const clubeIdDoUsuario = req.usuario.clubeId; // Já vem como string do middleware
+  const modalidadeIdParam = req.query.modalidade; // Captura o ID da modalidade da query string
 
   console.log("📥 GET /api/atletas - Requisição de:", {
- nome: req.usuario.nome,
- userId: req.usuario._id.toString(),
- clubeId: clubeIdDoUsuario, // O ID do clube do usuário logado
- tipo: req.usuario.tipo,
- queryParams: req.query // Loga todos os parâmetros de query recebidos
+   nome: req.usuario.nome,
+   userId: req.usuario._id.toString(),
+   clubeId: clubeIdDoUsuario,
+   tipo: req.usuario.tipo,
+   queryParams: req.query // Loga todos os parâmetros de query recebidos
   });
 
-  let filter = {}; // Objeto que construirá o filtro para o Mongoose
-  const populateOptions = ["modalidade"]; // Queremos sempre popular a modalidade
-
-  // Captura o ID da modalidade da query string, se estiver presente (ex: ?modalidade=ID)
-  const modalidadeId = req.query.modalidade;
-
-  if (req.usuario.tipo === "superAdmin") {
- // Para superAdmin, o filtro é opcional. Se modalidadeId for fornecido, filtramos por ela.
- if (modalidadeId) {
-  filter.modalidade = new mongoose.Types.ObjectId(modalidadeId);
- }
-  } else {
- // Para outros usuários, sempre filtramos pelo clubeId do usuário logado.
- if (!clubeIdDoUsuario) {
-  console.error("❌ Erro: clubeId do usuário não encontrado na sessão.");
-  return res.status(400).json({ error: "ID do clube do usuário não encontrado na sessão." });
- }
- filter.clubeId = new mongoose.Types.ObjectId(clubeIdDoUsuario); // Converte para ObjectId
-
- // Se um modalidadeId também for fornecido, adicione-o ao filtro
- if (modalidadeId) {
-  filter.modalidade = new mongoose.Types.ObjectId(modalidadeId); // Converte para ObjectId
- }
-  }
-
-  // Log para depuração: mostra o filtro exato que será usado na consulta ao serviço
-  console.log("➡️ Filtro final passado para AtletaService.findAll:", filter);
-
-  // Chama o método findAll do serviço, que agora precisa aceitar o filtro e as opções de populate
-  const atletas = await atletaService.findAll(filter, populateOptions);
+  // *** Delega toda a lógica de filtragem para o AtletaService ***
+  const atletas = await atletaService.getFilteredAthletes(
+   req.usuario.tipo,
+   clubeIdDoUsuario,
+   modalidadeIdParam
+  );
 
   res.status(200).json(atletas);
  } catch (err) {
@@ -65,13 +40,9 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
  try {
-  // Garante que o clubeId do usuário seja adicionado ao novo atleta
-  // Se req.body já tiver um clubeId, ele será sobrescrito ou mesclado
-  const dataToCreate = {
- ...req.body,
- clubeId: req.usuario.clubeId // Adiciona o clubeId do usuário logado
-  };
-  const novo = await atletaService.create(dataToCreate, req.usuario);
+  // A criação de um atleta não adiciona clubeId diretamente se não for no modelo.
+  // O vínculo é via modalidade que vem no req.body.
+  const novo = await atletaService.create(req.body, req.usuario);
   res.status(201).json(novo);
  } catch (err) {
   console.error("❌ Erro ao criar atleta:", err);
