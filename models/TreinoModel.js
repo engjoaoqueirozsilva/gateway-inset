@@ -2,12 +2,8 @@ import mongoose from 'mongoose';
 import { baseFields, baseOptions } from "./base/BaseModel.js";
 
 const AvaliacaoSchema = new mongoose.Schema({
-  Saque: [String],
-  Ataque: [String],
-  Defesa: [String],
-  Passe: [String],
-  Levantamento: [String],
-  Bloqueio: [String]
+  Fundamento: String,
+  Conceito: [String]  
 }, { _id: false });
 
 const AtletaSchema = new mongoose.Schema({
