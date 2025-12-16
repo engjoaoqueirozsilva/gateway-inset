@@ -1,14 +1,15 @@
 import mongoose from 'mongoose';
 import { baseFields, baseOptions } from "./base/BaseModel.js";
 
+// ✅ Schema ajustado para aceitar múltiplos fundamentos
 const AvaliacaoSchema = new mongoose.Schema({
-  Fundamento: String,
-  Conceito: [String]  
+  fundamento: String,
+  conceitos: [String]  
 }, { _id: false });
 
 const AtletaSchema = new mongoose.Schema({
   nome: String,
-  avaliacoes: AvaliacaoSchema
+  avaliacoes: [AvaliacaoSchema]  // ✅ Array de avaliações
 }, { _id: false });
 
 const TreinoSchema = new mongoose.Schema({
@@ -30,7 +31,6 @@ const TreinoSchema = new mongoose.Schema({
   observacoes: String,
   finalizado: Boolean,
   ...baseFields
-}, baseOptions
-);
+}, baseOptions);
 
 export const Treino = mongoose.model('Treino', TreinoSchema);
