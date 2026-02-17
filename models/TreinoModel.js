@@ -1,15 +1,20 @@
 import mongoose from 'mongoose';
 import { baseFields, baseOptions } from "./base/BaseModel.js";
 
-// ✅ Schema ajustado para aceitar múltiplos fundamentos
+// ✅ Schema ajustado para incluir timestamp em cada conceito
+const ConceitoSchema = new mongoose.Schema({
+  nivel: String,        // A, B, C, D, E, F
+  timestamp: Number     // Segundos desde o início do treino
+}, { _id: false });
+
 const AvaliacaoSchema = new mongoose.Schema({
   fundamento: String,
-  conceitos: [String]  
+  conceitos: [ConceitoSchema]  
 }, { _id: false });
 
 const AtletaSchema = new mongoose.Schema({
   nome: String,
-  avaliacoes: [AvaliacaoSchema]  // ✅ Array de avaliações
+  avaliacoes: [AvaliacaoSchema]
 }, { _id: false });
 
 const TreinoSchema = new mongoose.Schema({
@@ -30,6 +35,7 @@ const TreinoSchema = new mongoose.Schema({
   atletas: [AtletaSchema],
   observacoes: String,
   finalizado: Boolean,
+  duracaoTreino: Number,  // ✅ Duração total em segundos
   ...baseFields
 }, baseOptions);
 

@@ -107,8 +107,8 @@ class TreinoService extends BaseService {
       periodo: filtroData,
     });
 
-    // Pipeline de agregação
-    const pipeline = [
+    // Pipeline de agregação GERAL (sem quartis)
+    const pipelineGeral = [
       // 1. Filtrar por modalidades permitidas, data e treinos finalizados
       {
         $match: {
@@ -161,24 +161,29 @@ class TreinoService extends BaseService {
             fundamento: "$atletas.avaliacoes.fundamento",
           },
           totalTreinos: { $addToSet: "$_id" },
-          conceitos: { $push: "$atletas.avaliacoes.conceitos" },
+          conceitos: { 
+            $push: {
+              nivel: "$atletas.avaliacoes.conceitos.nivel",
+              timestamp: "$atletas.avaliacoes.conceitos.timestamp"
+            }
+          },
           conceitoA: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "A"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "A"] }, 1, 0] },
           },
           conceitoB: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "B"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "B"] }, 1, 0] },
           },
           conceitoC: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "C"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "C"] }, 1, 0] },
           },
           conceitoD: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "D"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "D"] }, 1, 0] },
           },
           conceitoE: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "E"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "E"] }, 1, 0] },
           },
           conceitoF: {
-            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos", "F"] }, 1, 0] },
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "F"] }, 1, 0] },
           },
         },
       },
@@ -362,12 +367,258 @@ class TreinoService extends BaseService {
       },
     ];
 
-    // Executar agregação
-    const resultado = await this.model.aggregate(pipeline);
+    // Pipeline de agregação POR QUARTIS
+    const pipelineQuartis = [
+      // 1. Filtrar treinos
+      {
+        $match: {
+          modalidade: { $in: modalidadesPermitidas },
+          data: filtroData,
+          finalizado: true,
+          duracaoTreino: { $exists: true, $gt: 0 }  // ✅ Só treinos com duração
+        },
+      },
 
-    console.log(`✅ Consolidação concluída: ${resultado.length} plano(s) encontrado(s)`);
+      // 2. Lookup do plano
+      {
+        $lookup: {
+          from: "planos",
+          localField: "plano",
+          foreignField: "_id",
+          as: "planoInfo"
+        }
+      },
 
-    // Retornar estrutura completa
+      // 3. Desestruturar plano
+      {
+        $unwind: {
+          path: "$planoInfo",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      // 4. Desenrolar atletas
+      {
+        $unwind: "$atletas",
+      },
+
+      // 5. Desenrolar avaliações
+      {
+        $unwind: "$atletas.avaliacoes",
+      },
+
+      // 6. Desenrolar conceitos
+      {
+        $unwind: "$atletas.avaliacoes.conceitos",
+      },
+
+      // 7. Calcular quartil de cada conceito
+      {
+        $addFields: {
+          quartil: {
+            $switch: {
+              branches: [
+                {
+                  case: {
+                    $lte: [
+                      "$atletas.avaliacoes.conceitos.timestamp",
+                      { $multiply: ["$duracaoTreino", 0.25] }
+                    ]
+                  },
+                  then: "Q1"
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$atletas.avaliacoes.conceitos.timestamp",
+                      { $multiply: ["$duracaoTreino", 0.50] }
+                    ]
+                  },
+                  then: "Q2"
+                },
+                {
+                  case: {
+                    $lte: [
+                      "$atletas.avaliacoes.conceitos.timestamp",
+                      { $multiply: ["$duracaoTreino", 0.75] }
+                    ]
+                  },
+                  then: "Q3"
+                }
+              ],
+              default: "Q4"
+            }
+          }
+        }
+      },
+
+      // 8. Agrupar por plano, atleta, fundamento e quartil
+      {
+        $group: {
+          _id: {
+            plano: "$plano",
+            planoNome: "$planoInfo.nome",
+            atleta: "$atletas.nome",
+            fundamento: "$atletas.avaliacoes.fundamento",
+            quartil: "$quartil"
+          },
+          totalExecucoes: { $sum: 1 },
+          conceitoA: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "A"] }, 1, 0] },
+          },
+          conceitoB: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "B"] }, 1, 0] },
+          },
+          conceitoC: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "C"] }, 1, 0] },
+          },
+          conceitoD: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "D"] }, 1, 0] },
+          },
+          conceitoE: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "E"] }, 1, 0] },
+          },
+          conceitoF: {
+            $sum: { $cond: [{ $eq: ["$atletas.avaliacoes.conceitos.nivel", "F"] }, 1, 0] },
+          },
+        },
+      },
+
+      // 9. Calcular métricas por quartil
+      {
+        $project: {
+          _id: 0,
+          plano: "$_id.plano",
+          planoNome: "$_id.planoNome",
+          atleta: "$_id.atleta",
+          fundamento: "$_id.fundamento",
+          quartil: "$_id.quartil",
+          totalExecucoes: 1,
+          distribuicao: {
+            A: "$conceitoA",
+            B: "$conceitoB",
+            C: "$conceitoC",
+            D: "$conceitoD",
+            E: "$conceitoE",
+            F: "$conceitoF",
+          },
+          percentualPositivo: {
+            $round: [
+              {
+                $multiply: [
+                  {
+                    $divide: [
+                      { $add: ["$conceitoA", "$conceitoB"] },
+                      "$totalExecucoes",
+                    ],
+                  },
+                  100,
+                ],
+              },
+              2,
+            ],
+          },
+          mediaNumerica: {
+            $round: [
+              {
+                $divide: [
+                  {
+                    $add: [
+                      { $multiply: ["$conceitoA", 5] },
+                      { $multiply: ["$conceitoB", 4] },
+                      { $multiply: ["$conceitoC", 3] },
+                      { $multiply: ["$conceitoD", 2] },
+                      { $multiply: ["$conceitoE", 1] },
+                      { $multiply: ["$conceitoF", 0] },
+                    ],
+                  },
+                  "$totalExecucoes",
+                ],
+              },
+              2,
+            ],
+          },
+        },
+      },
+
+      // 10. Agrupar por plano, atleta e fundamento (com quartis dentro)
+      {
+        $group: {
+          _id: {
+            plano: "$plano",
+            planoNome: "$planoNome",
+            atleta: "$atleta",
+            fundamento: "$fundamento"
+          },
+          quartis: {
+            $push: {
+              quartil: "$quartil",
+              totalExecucoes: "$totalExecucoes",
+              distribuicao: "$distribuicao",
+              percentualPositivo: "$percentualPositivo",
+              mediaNumerica: "$mediaNumerica"
+            }
+          }
+        }
+      },
+
+      // 11. Agrupar por plano e atleta
+      {
+        $group: {
+          _id: {
+            plano: "$_id.plano",
+            planoNome: "$_id.planoNome",
+            atleta: "$_id.atleta"
+          },
+          fundamentos: {
+            $push: {
+              nome: "$_id.fundamento",
+              quartis: "$quartis"
+            }
+          }
+        }
+      },
+
+      // 12. Agrupar por plano
+      {
+        $group: {
+          _id: "$_id.plano",
+          planoNome: { $first: "$_id.planoNome" },
+          atletas: {
+            $push: {
+              nome: "$_id.atleta",
+              fundamentos: "$fundamentos"
+            }
+          }
+        }
+      },
+
+      // 13. Formatar saída final
+      {
+        $project: {
+          _id: 0,
+          planoId: "$_id",
+          planoNome: 1,
+          atletas: 1,
+        },
+      },
+
+      // 14. Ordenar por plano
+      {
+        $sort: { planoNome: 1 },
+      },
+    ];
+
+    // Executar AMBAS as agregações em paralelo
+    const [resultadoGeral, resultadoQuartis] = await Promise.all([
+      this.model.aggregate(pipelineGeral),
+      this.model.aggregate(pipelineQuartis)
+    ]);
+
+    console.log(`✅ Consolidação concluída: ${resultadoGeral.length} plano(s) encontrado(s)`);
+    console.log(`✅ Análise por quartis concluída: ${resultadoQuartis.length} plano(s) com quartis`);
+
+    // Retornar estrutura completa com AMBOS os resultados
     return {
       periodo: {
         inicio: filtroData.$gte,
@@ -377,7 +628,8 @@ class TreinoService extends BaseService {
         modalidadeId: modalidadeId || "todas",
         totalModalidadesAcessiveis: modalidadesPermitidas.length,
       },
-      planos: resultado,
+      consolidadoGeral: resultadoGeral,      // ✅ Dados gerais (como já estava)
+      analiseQuartis: resultadoQuartis,      // ✅ Dados por quartis (novo)
     };
   }
 }
