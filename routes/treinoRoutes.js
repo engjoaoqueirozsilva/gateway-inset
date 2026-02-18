@@ -58,6 +58,73 @@ router.get('/consolidado', async (req, res) => {
   }
 });
 
+router.get('/planos-com-execucao', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    let usuario;
+
+    if (userId) {
+      const { default: Usuario } = await import('../models/UsuarioModel.js');
+      usuario = await Usuario.findById(userId).populate('clubeId');
+
+      if (!usuario) {
+        return res.status(404).json({ error: 'Usuário não encontrado' });
+      }
+    } else {
+      usuario = {
+        tipo: "superAdmin",
+        clubeId: null
+      };
+    }
+
+    const resultado = await treinoService.getPlanosComExecucao(usuario);
+
+    res.status(200).json(resultado);
+
+  } catch (err) {
+    res.status(500).json({
+      error: "Erro ao buscar planos com execução",
+      details: err.message
+    });
+  }
+});
+
+router.get('/resumo-plano/:planoId', async (req, res) => {
+  try {
+    const { planoId } = req.params;
+    const userId = req.headers["x-user-id"];
+
+    if (!userId) {
+      return res.status(401).json({
+        error: "Usuário não informado no header x-user-id"
+      });
+    }
+
+    const { default: Usuario } = await import('../models/UsuarioModel.js');
+
+    const usuario = await Usuario.findById(userId).populate('clubeId');
+
+    if (!usuario) {
+      return res.status(404).json({
+        error: "Usuário não encontrado"
+      });
+    }
+
+    const resultado = await treinoService.getResumoPorPlano(planoId, usuario);
+
+    res.status(200).json(resultado);
+
+  } catch (err) {
+    console.error("Erro resumo plano:", err);
+    res.status(500).json({
+      error: "Erro ao consolidar plano",
+      details: err.message
+    });
+  }
+});
+
+
 // Rotas CRUD padrão
 const baseRoutes = generateRoutes(treinoService);
 router.use('/', baseRoutes);

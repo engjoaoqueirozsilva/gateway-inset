@@ -150,7 +150,11 @@ class TreinoService extends BaseService {
       {
         $unwind: "$atletas.avaliacoes.conceitos",
       },
-
+      {
+        $match: {
+          "atletas.avaliacoes.conceitos.nivel": { $nin: [null, "", undefined] }
+        }
+      },
       // 7. Agrupar por plano, atleta e fundamento
       {
         $group: {
@@ -632,6 +636,182 @@ class TreinoService extends BaseService {
       analiseQuartis: resultadoQuartis,      // ✅ Dados por quartis (novo)
     };
   }
+
+  async getPlanosComExecucao(usuario) {
+    const { tipo: userType, clubeId } = usuario;
+
+    let modalidadesPermitidas = [];
+
+    if (userType === "superAdmin") {
+      modalidadesPermitidas = null;
+    } else {
+      if (!clubeId || !clubeId._id) {
+        throw new Error("Clube do usuário não identificado");
+      }
+
+      const Modalidade = mongoose.model("Modalidade");
+
+      const modalidades = await Modalidade.find({
+        clubeId: clubeId._id
+      }).select("_id");
+
+      modalidadesPermitidas = modalidades.map(m => m._id);
+    }
+
+    const matchStage = {
+      finalizado: true
+    };
+
+    if (modalidadesPermitidas) {
+      matchStage.modalidade = { $in: modalidadesPermitidas };
+    }
+
+    const pipeline = [
+      { $match: matchStage },
+
+      {
+        $group: {
+          _id: "$plano",
+          totalTreinos: { $sum: 1 }
+        }
+      },
+
+      {
+        $lookup: {
+          from: "planos",
+          localField: "_id",
+          foreignField: "_id",
+          as: "planoInfo"
+        }
+      },
+
+      { $unwind: "$planoInfo" },
+
+      {
+        $project: {
+          _id: 0,
+          planoId: "$_id",
+          planoNome: "$planoInfo.nome",
+          totalTreinos: 1
+        }
+      },
+
+      { $sort: { planoNome: 1 } }
+    ];
+
+    return await this.model.aggregate(pipeline);
+  }
+
+async getResumoPorPlano(planoId, usuario) {
+
+  if (!usuario?.clubeId) {
+    throw new Error("Usuário sem clube associado");
+  }
+
+  const planoObjectId = new mongoose.Types.ObjectId(planoId);
+
+  const resultado = await Treino.aggregate([
+
+    {
+      $match: {
+        plano: planoObjectId,
+        finalizado: true
+      }
+    },
+
+    { $unwind: "$atletas" },
+    { $unwind: "$atletas.avaliacoes" },
+    { $unwind: "$atletas.avaliacoes.conceitos" },
+
+    {
+      $addFields: {
+        fundamento: "$atletas.avaliacoes.fundamento",
+        nivel: "$atletas.avaliacoes.conceitos.nivel",
+        timestamp: "$atletas.avaliacoes.conceitos.timestamp",
+        quartilSize: { $divide: ["$duracaoTreino", 4] }
+      }
+    },
+
+    {
+      $addFields: {
+        quartil: {
+          $switch: {
+            branches: [
+              { case: { $lte: ["$timestamp", "$quartilSize"] }, then: "Q1" },
+              { case: { $lte: ["$timestamp", { $multiply: ["$quartilSize", 2] }] }, then: "Q2" },
+              { case: { $lte: ["$timestamp", { $multiply: ["$quartilSize", 3] }] }, then: "Q3" }
+            ],
+            default: "Q4"
+          }
+        }
+      }
+    },
+
+    {
+      $group: {
+        _id: {
+          fundamento: "$fundamento",
+          quartil: "$quartil",
+          nivel: "$nivel"
+        },
+        totalNivel: { $sum: 1 }
+      }
+    },
+
+    {
+      $group: {
+        _id: {
+          fundamento: "$_id.fundamento",
+          quartil: "$_id.quartil"
+        },
+        niveis: {
+          $push: {
+            nivel: "$_id.nivel",
+            total: "$totalNivel"
+          }
+        },
+        totalQuartil: { $sum: "$totalNivel" }
+      }
+    }
+
+  ]);
+
+  // 🔥 Agora montamos o objeto no Node (sem $arrayToObject)
+
+  const resposta = {};
+
+  resultado.forEach(item => {
+
+    const fundamento = item._id.fundamento;
+    const quartil = item._id.quartil;
+
+    if (!resposta[fundamento]) {
+      resposta[fundamento] = {};
+    }
+
+    if (!resposta[fundamento][quartil]) {
+      resposta[fundamento][quartil] = {};
+    }
+
+    item.niveis.forEach(n => {
+
+      const percentual = item.totalQuartil > 0
+        ? Number(((n.total / item.totalQuartil) * 100).toFixed(2))
+        : 0;
+
+      resposta[fundamento][quartil][n.nivel] = {
+        total: n.total,
+        percentual
+      };
+
+    });
+
+  });
+
+  return resposta;
+}
+
+
 }
 
 export default TreinoService;
