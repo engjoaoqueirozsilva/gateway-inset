@@ -39,7 +39,7 @@ app.use("/api/planos", planoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/clubes", clubeRoutes);
-
+app.use('/api/acoes-jogo', acoesRoutes);
 
 app.use('/api/atletas', atletaRoutes);
 
