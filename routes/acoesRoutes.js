@@ -1,6 +1,6 @@
 import express from "express";
 import { extrairClubeId } from "../middlewares/auth.js";
-import AcaoDeJogoService from "../services/AcaoDeJogoService.js";
+import AcoesService from "../services/AcoesService.js";
 import { generateRoutes } from "./base/baseRoute.js";
 
 const router = express.Router();

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { BaseService } from "./base/BaseService.js";
-import { AcaoDeJogo } from "../models/AcaoDeJogoModel.js";
+import { AcaoDeJogo } from "../models/AcoesModel.js";
 import { Modalidade } from "../models/ModalidadeModel.js";
 
 class AcoesService extends BaseService {

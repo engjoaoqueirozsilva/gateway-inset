@@ -77,6 +77,6 @@ const AcoesSchema = new mongoose.Schema(
 
 export const AcaoDeJogo = mongoose.model(
   "AcaoDeJogo",
-  AcaoDeJogoSchema,
+  AcoesSchema,
   "acoesDeJogo"
 );
