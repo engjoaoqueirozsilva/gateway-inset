@@ -8,6 +8,7 @@ import modalidadeRoutes from './routes/modalidadeRoutes.js';
 import planoRoutes from "./routes/planoRoutes.js";
 import treinoRoutes from './routes/treinoRoutes.js';
 import usuarioRoutes from "./routes/usuarioRoutes.js";
+import acoesRoutes from "./routes/acoesRoutes.js";
 import { port, mongoURI } from './config.js';
 
 const app = express();
