@@ -9,6 +9,7 @@ import planoRoutes from "./routes/planoRoutes.js";
 import treinoRoutes from './routes/treinoRoutes.js';
 import usuarioRoutes from "./routes/usuarioRoutes.js";
 import acoesRoutes from "./routes/acoesRoutes.js";
+import lousaRoutes from "./routes/lousaTaticaRoutes.js";
 import { port, mongoURI } from './config.js';
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/clubes", clubeRoutes);
 app.use('/api/acoes-jogo', acoesRoutes);
+app.use('/api/lousa', lousaRoutes);
 
 app.use('/api/atletas', atletaRoutes);
 
